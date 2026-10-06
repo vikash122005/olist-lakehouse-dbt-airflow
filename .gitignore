@@ -221,3 +221,7 @@ __marimo__/
 
 # raw Olist CSVs
 data/raw
+
+#duckdb
+data/warehouse/*.duckdb
+data/warehouse/*.duckdb.wal
