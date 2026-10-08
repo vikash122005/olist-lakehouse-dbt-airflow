@@ -225,3 +225,7 @@ data/raw
 #duckdb
 data/warehouse/*.duckdb
 data/warehouse/*.duckdb.wal
+
+target/
+logs/
+dbt_packages/

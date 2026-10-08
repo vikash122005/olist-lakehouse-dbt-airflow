@@ -1,0 +1,8 @@
+name: 'olist'
+version: '1.0.0'
+profile: 'olist'
+model-paths: ["models"]
+
+models:
+  olist:
+    +materialized: table

@@ -1,0 +1,7 @@
+olist:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ../data/warehouse/olist.duckdb
+      schema: silver
