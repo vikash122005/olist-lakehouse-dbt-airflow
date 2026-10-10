@@ -106,3 +106,112 @@ con.sql("SELECT COUNT(DISTINCT customer_state),COUNT(DISTINCT lower(trim(custome
 ├────────────────────────────────┼────────────────────────────────────────────────────┤
 │                             27 │                                                 27 │
 └────────────────────────────────┴────────────────────────────────────────────────────┘
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+--The observations raw_sellers
+
+--Toatal row counts
+con.sql("SELECT COUNT(*) FROM bronze.raw_sellers")
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│         3095 │
+└──────────────┘
+
+--Total Distinct seller_id
+con.sql("SELECT COUNT(DISTINCT seller_id) FROM bronze.raw_sellers")
+
+┌───────────────────────────┐
+│ count(DISTINCT seller_id) │
+│           int64           │
+├───────────────────────────┤
+│                      3095 │
+└───────────────────────────┘
+
+--Casing and whitespace test
+
+con.sql("SELECT COUNT(DISTINCT seller_city),COUNT(DISTINCT lower(trim(seller_city))) FROM bronze.raw_sellers")
+
+┌─────────────────────────────┬─────────────────────────────────────────────────┐
+│ count(DISTINCT seller_city) │ count(DISTINCT lower(main."trim"(seller_city))) │
+│            int64            │                      int64                      │
+├─────────────────────────────┼─────────────────────────────────────────────────┤
+│                         611 │                                             611 │
+└─────────────────────────────┴─────────────────────────────────────────────────┘
+
+con.sql("SELECT COUNT(DISTINCT seller_state),COUNT(DISTINCT lower(trim(seller_state))) FROM bronze.raw_sellers")
+
+┌──────────────────────────────┬──────────────────────────────────────────────────┐
+│ count(DISTINCT seller_state) │ count(DISTINCT lower(main."trim"(seller_state))) │
+│            int64             │                      int64                       │
+├──────────────────────────────┼──────────────────────────────────────────────────┤
+│                           23 │                                               23 │
+└──────────────────────────────┴──────────────────────────────────────────────────┘
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+--The observations raw_category_translation
+
+--Toatal row counts
+con.sql("SELECT COUNT(*) FROM bronze.raw_category_translation")
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│           71 │
+└──────────────┘
+
+--Total Distinct product_category_name
+con.sql("SELECT COUNT(DISTINCT product_category_name) FROM bronze.raw_category_translation")
+
+┌───────────────────────────────────────┐
+│ count(DISTINCT product_category_name) │
+│                 int64                 │
+├───────────────────────────────────────┤
+│                                    71 │
+└───────────────────────────────────────┘
+
+--Whitespace and casing
+con.sql("SELECT COUNT(DISTINCT product_category_name),COUNT(DISTINCT lower(trim(product_category_name))) FROM bronze.raw_category_translation")
+
+┌───────────────────────────────────────┬───────────────────────────────────────────────────────────┐
+│ count(DISTINCT product_category_name) │ count(DISTINCT lower(main."trim"(product_category_name))) │
+│                 int64                 │                           int64                           │
+├───────────────────────────────────────┼───────────────────────────────────────────────────────────┤
+│                                    71 │                                                        71 │
+└───────────────────────────────────────┴───────────────────────────────────────────────────────────┘
+
+con.sql("SELECT COUNT(DISTINCT product_category_name_english),COUNT(DISTINCT lower(trim(product_category_name_english))) FROM bronze.raw_category_translation")
+
+┌───────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────┐
+│ count(DISTINCT product_category_name_english) │ count(DISTINCT lower(main."trim"(product_category_name_english))) │
+│                     int64                     │                               int64                               │
+├───────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────┤
+│                                            71 │                                                                71 │
+└───────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────┘
+
+
+--Total NUll values in product_category_name
+
+con.sql("SELECT COUNT(*) FROM bronze.raw_category_translation WHERE product_category_name IS NULL")
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│            0 │
+└──────────────┘
+
+--Total NUll values in product_category_name_english
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│            0 │
+└──────────────┘
+
+
+
