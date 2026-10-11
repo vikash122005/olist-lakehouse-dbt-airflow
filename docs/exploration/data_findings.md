@@ -213,5 +213,70 @@ con.sql("SELECT COUNT(*) FROM bronze.raw_category_translation WHERE product_cate
 │            0 │
 └──────────────┘
 
+--Total NullS in bronze.raw_products from product_category_name column
 
+con.sql("SELECT COUNT(*) FROM bronze.raw_products WHERE product_category_name IS NULL")
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│          610 │
+└──────────────┘
+
+--Unmatched rows in bronze.raw_category_translation table comapring with bronze.raw_products
+--con.sql("""
+
+...     SELECT COUNT(*)
+...     FROM bronze.raw_products p
+...     LEFT JOIN bronze.raw_category_translation t
+...         ON p.product_category_name = t.product_category_name
+...     WHERE t.product_category_name IS NULL
+...       AND p.product_category_name IS NOT NULL
+... """)
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│           13 │
+└──────────────┘
+
+--product_category_name that are not available in raw_category_translation but available in bronze.raw_products
+
+--con.sql("""
+
+...     SELECT DISTINCT p.product_category_name
+...     FROM bronze.raw_products p
+...     LEFT JOIN bronze.raw_category_translation t
+...         ON p.product_category_name = t.product_category_name
+...     WHERE t.product_category_name IS NULL
+...       AND p.product_category_name IS NOT NULL
+... """)
+┌───────────────────────────────────────────────┐
+│             product_category_name             │
+│                    varchar                    │
+├───────────────────────────────────────────────┤
+│ portateis_cozinha_e_preparadores_de_alimentos │
+│ pc_gamer                                      │
+└───────────────────────────────────────────────┘
+
+## Category translation findings
+
+**What I checked:** whether every product category in `products` has an English name in the translation table.
+
+**What I found:**
+- The translation table has 71 rows, all unique, with no nulls and no casing or whitespace problems.
+- 610 products have no category at all (NULL).
+- 13 products have a category, but it is missing from the translation table. The two missing categories are `pc_gamer` and `portateis_cozinha_e_preparadores_de_alimentos`.
+- 610 + 13 = 623 products had no English name in the first join.
+
+**What I decided:**
+- Keep `category_translation` in Silver as a clean copy of the 71 rows, with no changes to the data.
+- Handle the gaps later in Gold (`dim_products`):
+  - NULL category: label it `unknown`.
+  - Category exists but has no translation: use the Portuguese name.
+  - Always use a left join so no products are dropped.
+
+**Why:** Dropping or leaving these products blank would hide them from reports, so every product still gets a readable category name.
 
