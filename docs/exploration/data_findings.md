@@ -280,3 +280,106 @@ con.sql("SELECT COUNT(*) FROM bronze.raw_products WHERE product_category_name IS
 
 **Why:** Dropping or leaving these products blank would hide them from reports, so every product still gets a readable category name.
 
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+--The observations raw_products
+
+--Rows and uniqueness:
+con.sql("SELECT COUNT(*),COUNT(DISTINCT product_id) FROM bronze.raw_products")
+
+┌──────────────┬────────────────────────────┐
+│ count_star() │ count(DISTINCT product_id) │
+│    int64     │           int64            │
+├──────────────┼────────────────────────────┤
+│        32951 │                      32951 │
+└──────────────┴────────────────────────────┘
+
+--Nulls per column:
+con.sql("SELECT COUNT(*) - COUNT(product_category_name) AS Null_category_name,
+                COUNT(*) - COUNT(product_name_lenght) AS Null_name_lenght,
+                COUNT(*) - COUNT(product_description_lenght) AS Null_description_lenght,
+                COUNT(*) - COUNT(product_photos_qty) AS Null_photos_qty,
+                COUNT(*) - COUNT(product_weight_g) AS Null_weight_g,
+                COUNT(*) - COUNT(product_length_cm) AS length_cm,
+                COUNT(*) - COUNT(product_height_cm) AS Null_height_cm,
+                COUNT(*) - COUNT(product_width_cm) AS Null_width_cm  FROM bronze.raw_products").show(max_width = 1000)
+
+┌────────────────────┬──────────────────┬─────────────────────────┬─────────────────┬───────────────┬───────────┬────────────────┬───────────────┐
+│ Null_category_name │ Null_name_lenght │ Null_description_lenght │ Null_photos_qty │ Null_weight_g │ length_cm │ Null_height_cm │ Null_width_cm │
+│       int64        │      int64       │          int64          │      int64      │     int64     │   int64   │     int64      │     int64     │
+├────────────────────┼──────────────────┼─────────────────────────┼─────────────────┼───────────────┼───────────┼────────────────┼───────────────┤
+│                610 │              610 │                     610 │             610 │             2 │         2 │              2 │             2 │
+└────────────────────┴──────────────────┴─────────────────────────┴─────────────────┴───────────────┴───────────┴────────────────┴───────────────┘
+
+--Impossible values:
+con.sql("SELECT COUNT(*) FROM bronze.raw_products WHERE  product_weight_g = 0")
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│            4 │
+└──────────────┘
+
+con.sql("""
+...     SELECT
+...         MIN(product_weight_g)  AS min_weight,  MAX(product_weight_g)  AS max_weight,
+...         MIN(product_length_cm) AS min_length,  MAX(product_length_cm) AS max_length,
+...         MIN(product_height_cm) AS min_height,  MAX(product_height_cm) AS max_height,
+...         MIN(product_width_cm)  AS min_width,   MAX(product_width_cm)  AS max_width
+...     FROM bronze.raw_products
+... """).show(max_width=1000)
+
+┌────────────┬────────────┬────────────┬────────────┬────────────┬────────────┬───────────┬───────────┐
+│ min_weight │ max_weight │ min_length │ max_length │ min_height │ max_height │ min_width │ max_width │
+│   int64    │   int64    │   int64    │   int64    │   int64    │   int64    │   int64   │   int64   │
+├────────────┼────────────┼────────────┼────────────┼────────────┼────────────┼───────────┼───────────┤
+│          0 │      40425 │          7 │        105 │          2 │        105 │         6 │       118 │
+└────────────┴────────────┴────────────┴────────────┴────────────┴────────────┴───────────┴───────────┘
+
+--Overlap check(Whether they’re empty on the same rows)
+con.sql("SELECT COUNT(*) FROM bronze.raw_products WHERE product_category_name IS NULL AND product_name_lenght IS NULL AND product_description_lenght IS NULL AND product_photos_qty IS NULL")
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│          610 │
+└──────────────┘
+
+--Where do the 2 null-weight products sit?
+con.sql("SELECT COUNT(*) FROM bronze.raw_products WHERE product_category_name IS NULL AND product_name_lenght IS NULL AND product_description_lenght IS NULL AND product_photos_qty IS NULL AND product_weight_g IS NULL AND product_length_cm IS NULL AND product_height_cm IS NULL AND product_width_cm IS NULL")
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│            1 │
+└──────────────┘
+
+--Where do the 2 null-weight products sit?(only for weight column)
+
+┌──────────────┐
+│ count_star() │
+│    int64     │
+├──────────────┤
+│            1 │
+└──────────────┘
+
+
+## Products findings
+
+**What I checked:** row count, uniqueness, nulls, and value ranges in products.
+
+**What I found:**
+- 32,951 products, all unique `product_id`.
+- 610 products have no category, name length, description length or photo quantity, always on the same rows.
+- 2 products have no weight or dimensions: one is inside the 610 group, and one (category `bebes`) has listing details but no measurements.
+- 4 products have weight 0. All are in `cama_mesa_banho` with identical dimensions, so likely a missing weight recorded as 0.
+- Length, height and width have no zeros or extreme values. Max weight is 40,425 g, which is plausible.
+
+**What I decided:** keep all rows in Silver and only fix the two column spellings (`lenght` to `length`). Add a dbt test on Day 4 that weight must be greater than 0.
+
+**Why:** changing or deleting these silently would hide a source problem. Gold decides how to treat them, for example excluding zero weights from shipping analysis.
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------
+
